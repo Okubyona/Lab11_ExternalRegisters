@@ -99,11 +99,37 @@ int counterTick(int state) {
             if (!A0 && !A1) { state = wait; }
             else { state = buttonPress; }
             break;
+
+        default:
+            state = init;
+            break;
     }
 
     switch (state) {
+        case init:
+            // Set default output to 0xFF - 0x0A
+            shiftOutput = 0xF5;
+            break;
+
+        case wait: break;
+
+        case increment:
+            if (shiftOutput < 0xFF) { ++shiftOutput; }
+            break;
+
+        case decrement:
+            if (shiftOutput > 0x00) { --shiftOutput;}
+            break;
+
+        case reset:
+            shiftOutput = 0x00;
+            break;
+
+        case buttonPress: break;
 
     }
+    // pass counter value to shift register
+    transmit_data(shiftOutput);
 
     return state;
 }

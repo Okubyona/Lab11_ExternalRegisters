@@ -1,5 +1,5 @@
 /*	Author: lab
- *  Partner(s) Name: 
+ *  Partner(s) Name:
  *	Lab Section:
  *	Assignment: Lab #  Exercise #
  *	Exercise Description: [optional - include for your own benefit]
@@ -11,6 +11,9 @@
 #ifdef _SIMULATE_
 #include "simAVRHeader.h"
 #endif
+#include "tasks.h"
+#include "transmit_shift_data.h"
+#include "timer.h"
 
 int main(void) {
     /* Insert DDR and PORT initializations */

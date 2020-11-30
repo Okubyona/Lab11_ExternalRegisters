@@ -23,9 +23,9 @@
 typedef enum lightControl_states {init_lc, wait_lc, increment, decrement, onOff,
                                   buttonPress} lightControl;
 
-typedef enum festiveLights1_states {wait_1, lightShow_1, reset_1} Lights1;
-typedef enum festiveLights2_states {wait_2, lightShow_2, reset_2} Lights2;
-typedef enum festiveLights3_states {wait_3, lightShow_3, reset_3} Lights3;
+typedef enum festiveLights1_states {wait_1, lightShow_1} Lights1;
+typedef enum festiveLights2_states {wait_2, lightShow_2} Lights2;
+typedef enum festiveLights3_states {wait_3, lightShow_3} Lights3;
 
 
 int lightControlTick (int state);
@@ -169,6 +169,19 @@ int lightControlTick(int state) {
 }
 
 int festiveLights1 (int state) {
+    static unsigned char lightShow;
+
+    switch (state) {
+        case wait_1:
+            if (lightsOnDisplay == 1) { state = lightShow_1; }
+            else { state = wait_1; }
+            break;
+
+        case lightShow_1:
+            if (lightsOnDisplay == 1) { state = lightShow_1; }
+            else { state = reset_1; }
+            break;
+    }
 
     return state;
 }

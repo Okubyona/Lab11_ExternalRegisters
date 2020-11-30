@@ -1,11 +1,10 @@
 /*	Author: Andrew Bazua [abazu001]
  *  Partner(s) Name:
  *	Lab Section: 024
- *	Assignment: Lab #11  Exercise #1
- *	Exercise Description: [Design a system where a ‘char’ variable can be
-    incremented or decremented based on specific button presses. The value of
-    the variable is then transmitted to the shift register and displayed on a
-    bank of eight LEDs.]
+ *	Assignment: Lab #11  Exercise #2
+ *	Exercise Description: [Design a system where one of three festive light
+    displays is displayed on the shift register’s LED bank. The choice of
+    festive light displays is determined by button presses.]
  *
  *	I acknowledge all content contained herein, excluding template or example
  *	code, is my own original work.
@@ -21,24 +20,47 @@
 #include "transmit_shift_data.h"
 #include "timer.h"
 
-typedef enum counter_states {init, wait, increment, decrement, reset,
-                             buttonPress} counter;
+typedef enum lightControl_states {init_lc, wait_lc, increment, decrement, reset,
+                                  buttonPress} lightControl;
 
-int counterTick(int state);
+typedef enum festiveLights1_states {wait_1, lightShow_1, reset_1} Lights1;
+typedef enum festiveLights2_states {wait_2, lightShow_2, reset_2} Lights2;
+typedef enum festiveLights3_states {wait_3, lightShow_3, reset_3} Lights3;
+
+
+int lightControlTick (int state);
+int festiveLights1 (int state);
+int festiveLights2 (int state);
+int festiveLights3 (int state);
 
 int main(void) {
     DDRA = 0x00; PORTA = 0xFF;
     DDRC = 0xFF; PORTC = 0x00;
 
-    static task task1;
-    task *tasks[] = {&task1};
+    static task task1, task2, task3, task4;
+    task *tasks[] = {&task1, &task2, &task3, &task4};
     const unsigned short numTasks = sizeof(tasks) / sizeof(task*);
 
-    // Task 1 (counterTick)
-    task1.state = init;
+    // Task 1 (lightControlTick)
+    task1.state = init_lc;
     task1.period = 50;
     task1.elapsedTime = task1.period;
-    task1.TickFct = &counterTick;
+    task1.TickFct = &lightControlTick;
+
+    task2.state = wait_1;
+    task2.period = 150;
+    task2.elapsedTime = task2.period;
+    task2.TickFct = &festiveLights1;
+
+    task3.state = wait_2;
+    task3.period = 150;
+    task3.elapsedTime = task3.period;
+    task3.TickFct = &festiveLights2;
+
+    task4.state = wait_3;
+    task4.period = 150;
+    task4.elapsedTime = task4.period;
+    task4.TickFct = &festiveLights3;
 
     unsigned long GCD = tasks[0]->period;
     for (unsigned char i = 0; i < numTasks; i++) {
@@ -63,75 +85,98 @@ int main(void) {
     return 1;
 }
 
-int counterTick(int state) {
-    static unsigned char shiftOutput;
+
+// Shared variable to distinguish which light pattern is on
+
+static unsigned char lightsOnDisplay;
+
+// ----------
+
+int lightControlTick(int state) {
     unsigned char A0 = ~PINA & 0x01;
     unsigned char A1 = ~PINA & 0x02;
 
     switch (state) {
-        case init: state = wait; shiftOutput = 0xF5; break;
+        case init_lc: state = wait_lc;  break;
 
-        case wait:
+        case wait_lc:
             if (A0 && A1) { state = reset; }
             else if (A0 && !A1) { state = increment; }
             else if (!A0 && A1) { state = decrement; }
-            else { state = wait; }
+            else { state = wait_lc; }
             break;
 
         case increment:
             if (A0 && A1) { state = reset; }
             else if (A0 && !A1) { state = buttonPress; }
             else if (!A0 && A1) { state = decrement; }
-            else { state = wait; }
+            else { state = wait_lc; }
             break;
 
         case decrement:
             if (A0 && A1) { state = reset; }
             else if (!A0 && A1) { state = buttonPress; }
             else if (A0 && !A1) { state = increment; }
-            else { state = wait; }
+            else { state = wait_lc; }
             break;
 
         case reset:
             if (A0 || A1) { state = buttonPress; }
-            else { state = wait; }
+            else { state = wait_lc; }
             break;
 
         case buttonPress:
-            if (!A0 && !A1) { state = wait; }
+            if (!A0 && !A1) { state = wait_lc; }
             else if (A0 && A1) { state = reset; }
             else { state = buttonPress; }
             break;
 
         default:
-            state = init;
+            state = init_lc;
             break;
     }
 
     switch (state) {
-        case init:
-            // Set default output to 0xFF - 0x0A
-            shiftOutput = 0xF5;
+        case init_lc:
+            // Set default light pattern to the first of three
+            lightsOnDisplay = 0x01;
             break;
 
-        case wait: break;
+        case wait_lc: break;
 
         case increment:
-            if (shiftOutput < 0xFF) { ++shiftOutput; }
+            // Maximum of 3 light patterns
+            if (lightsOnDisplay < 3) { ++lightsOnDisplay; }
             break;
 
         case decrement:
-            if (shiftOutput > 0x00) { --shiftOutput;}
+            if (lightsOnDisplay > 0) { --lightsOnDisplay;}
             break;
 
         case reset:
-            shiftOutput = 0x00;
+            lightsOnDisplay = 0x00;
             break;
 
         case buttonPress: break;
 
     }
-    // pass counter value to shift register
-    transmit_data(shiftOutput);
+    // Lights are off
+    if (lightsOnDisplay == 0) { transmit_data(0x00); }
+
+    return state;
+}
+
+int festiveLights1 (int state) {
+
+    return state;
+}
+
+int festiveLights2 (int state) {
+
+    return state;
+}
+
+int festiveLights3 (int state) {
+
     return state;
 }

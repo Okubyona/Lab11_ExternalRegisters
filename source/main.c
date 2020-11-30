@@ -26,19 +26,21 @@ typedef enum lightControl_states {init_lc, wait_lc, increment, decrement, onOff,
 typedef enum festiveLights1_states {wait_1, lightShow_1} Lights1;
 typedef enum festiveLights2_states {wait_2, lightShow_2} Lights2;
 typedef enum festiveLights3_states {wait_3, lightShow_3} Lights3;
+typedef enum output_states {output} Output;
 
 
 int lightControlTick (int state);
 int festiveLights1 (int state);
 int festiveLights2 (int state);
 int festiveLights3 (int state);
+int outputTick (int state);
 
 int main(void) {
     DDRA = 0x00; PORTA = 0xFF;
     DDRC = 0xFF; PORTC = 0x00;
 
-    static task task1, task2, task3, task4;
-    task *tasks[] = {&task1, &task2, &task3, &task4};
+    static task task1, task2, task3, task4, task5;
+    task *tasks[] = {&task1, &task2, &task3, &task4, &task5};
     const unsigned short numTasks = sizeof(tasks) / sizeof(task*);
 
     // Task 1 (lightControlTick)
@@ -61,6 +63,11 @@ int main(void) {
     task4.period = 150;
     task4.elapsedTime = task4.period;
     task4.TickFct = &festiveLights3;
+
+    task5.state = output;
+    task5.period = 150;
+    task5.elapsedTime = task5.period;
+    task5.TickFct = &outputTick;
 
     unsigned long GCD = tasks[0]->period;
     for (unsigned char i = 0; i < numTasks; i++) {
@@ -88,7 +95,8 @@ int main(void) {
 
 // Shared variable to distinguish which light pattern is on
 
-static unsigned char lightsOnDisplay;
+unsigned char lightsOnDisplay;
+unsigned char shiftOutput;
 
 // ----------
 
@@ -97,7 +105,7 @@ int lightControlTick(int state) {
     unsigned char A1 = ~PINA & 0x02;
 
     switch (state) {
-        case init_lc: state = wait_lc;  break;
+        case init_lc: state = wait_lc; lightsOnDisplay = 0x01;  break;
 
         case wait_lc:
             if (A0 && A1) { state = onOff; }
@@ -127,7 +135,6 @@ int lightControlTick(int state) {
 
         case buttonPress:
             if (!A0 && !A1) { state = wait_lc; }
-            else if (A0 && A1) { state = onOff; }
             else { state = buttonPress; }
             break;
 
@@ -146,42 +153,28 @@ int lightControlTick(int state) {
 
         case increment:
             // Maximum of 3 light patterns
-            if (lightsOnDisplay < 3) { ++lightsOnDisplay; }
+            if (lightsOnDisplay < 3 && lightsOnDisplay != 0) { ++lightsOnDisplay; }
             break;
 
         case decrement:
-            if (lightsOnDisplay > 0) { --lightsOnDisplay;}
+            if (lightsOnDisplay > 1) { --lightsOnDisplay;}
             break;
 
         case onOff:
             // If lights are on, turn them off
-            if (lightsOnDisplay > 0) { lightsOnDisplay = 0x00; }
+            if (lightsOnDisplay >= 1) { lightsOnDisplay = 0x00; shiftOutput = 0x00; }
             else { lightsOnDisplay = 0x01; }
             break;
 
         case buttonPress: break;
 
     }
-    // Lights are off
-    if (lightsOnDisplay == 0) { transmit_data(0x00); }
 
     return state;
 }
 
 int festiveLights1 (int state) {
-    static unsigned char lightShow;
 
-    switch (state) {
-        case wait_1:
-            if (lightsOnDisplay == 1) { state = lightShow_1; }
-            else { state = wait_1; }
-            break;
-
-        case lightShow_1:
-            if (lightsOnDisplay == 1) { state = lightShow_1; }
-            else { state = reset_1; }
-            break;
-    }
 
     return state;
 }
@@ -192,6 +185,17 @@ int festiveLights2 (int state) {
 }
 
 int festiveLights3 (int state) {
+
+    return state;
+}
+
+int outputTick (int state) {
+    switch (state) {
+        case output:
+            transmit_data(shiftOutput);
+            break;
+
+    }
 
     return state;
 }

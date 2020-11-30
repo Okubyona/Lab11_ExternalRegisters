@@ -215,6 +215,37 @@ int festiveLights1 (int state) {
 }
 
 int festiveLights2 (int state) {
+    static unsigned char flip;
+
+    switch (state) {
+        case wait_2:
+            if (lightsOnDisplay == 2) { state = lightShow_2; }
+            else { state = wait_2; }
+            break;
+
+        case lightShow_2:
+            if (lightsOnDisplay == 2) { state = lightShow_2; }
+            else { state = wait_2; }
+            break;
+    }
+
+    switch (state) {
+        case wait_2:
+            // Initial light s
+            flip = 0;
+            break;
+
+        case lightShow_2:
+            if (flip) {
+                shiftOutput = 0xAA;
+                flip = ~flip;
+            }
+            else {
+                shiftOutput = 0x55;
+                flip = ~flip;
+            }
+            break;
+    }
 
     return state;
 }

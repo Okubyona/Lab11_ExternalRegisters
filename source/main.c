@@ -55,7 +55,7 @@ int main(void) {
     task2.TickFct = &festiveLights1;
 
     task3.state = wait_2;
-    task3.period = 150;
+    task3.period = 250;
     task3.elapsedTime = task3.period;
     task3.TickFct = &festiveLights2;
 

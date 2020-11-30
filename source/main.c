@@ -10,7 +10,7 @@
  *	code, is my own original work.
  *
  *  Demo Link:
- *  https://drive.google.com/file/d/1dwrF6QmGY8r61g3MJQG1bEvzlVNF4igf/view?usp=sharing
+ *  https://drive.google.com/file/d/1xhtyeiNha00Q6zb63rLT-y-lN-Ikw0W0/view?usp=sharing
  */
 #include <avr/io.h>
 #ifdef _SIMULATE_
@@ -45,27 +45,27 @@ int main(void) {
 
     // Task 1 (lightControlTick)
     task1.state = init_lc;
-    task1.period = 50;
+    task1.period = 100;
     task1.elapsedTime = task1.period;
     task1.TickFct = &lightControlTick;
 
     task2.state = wait_1;
-    task2.period = 150;
+    task2.period = 200;
     task2.elapsedTime = task2.period;
     task2.TickFct = &festiveLights1;
 
     task3.state = wait_2;
-    task3.period = 250;
+    task3.period = 400;
     task3.elapsedTime = task3.period;
     task3.TickFct = &festiveLights2;
 
     task4.state = wait_3;
-    task4.period = 150;
+    task4.period = 200;
     task4.elapsedTime = task4.period;
     task4.TickFct = &festiveLights3;
 
     task5.state = output;
-    task5.period = 150;
+    task5.period = 100;
     task5.elapsedTime = task5.period;
     task5.TickFct = &outputTick;
 
@@ -238,11 +238,11 @@ int festiveLights2 (int state) {
         case lightShow_2:
             if (flip) {
                 shiftOutput = 0xAA;
-                flip = ~flip;
+                flip = 0x00;
             }
             else {
                 shiftOutput = 0x55;
-                flip = ~flip;
+                flip = 0x01;
             }
             break;
     }
@@ -251,7 +251,37 @@ int festiveLights2 (int state) {
 }
 
 int festiveLights3 (int state) {
+    static int shifter;
+    switch (state) {
+        case wait_3:
+            if (lightsOnDisplay == 3) { state = lightShow_3; }
+            else { state = wait_3; }
+            break;
 
+        case lightShow_3:
+            if (lightsOnDisplay == 3) { state = lightShow_3; }
+            else { state = wait_3; }
+            break;
+    }
+
+    switch (state) {
+        case wait_3:
+            // Initial light s
+            shifter = 0;
+            break;
+
+        case lightShow_3:
+            if (shifter == 0) {
+                shiftOutput = 0x00;
+            }
+            if (shifter < 8) {
+                shiftOutput = (shiftOutput | 0x01 << shifter); }
+            else if (shifter < 16 ) { shiftOutput >>= 1; }
+            ++shifter;
+
+            if (shifter >= 16) { shifter = 0;}
+            break;
+    }
     return state;
 }
 

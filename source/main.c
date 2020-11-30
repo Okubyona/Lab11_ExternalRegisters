@@ -20,7 +20,7 @@
 #include "transmit_shift_data.h"
 #include "timer.h"
 
-typedef enum lightControl_states {init_lc, wait_lc, increment, decrement, reset,
+typedef enum lightControl_states {init_lc, wait_lc, increment, decrement, onOff,
                                   buttonPress} lightControl;
 
 typedef enum festiveLights1_states {wait_1, lightShow_1, reset_1} Lights1;
@@ -100,34 +100,34 @@ int lightControlTick(int state) {
         case init_lc: state = wait_lc;  break;
 
         case wait_lc:
-            if (A0 && A1) { state = reset; }
+            if (A0 && A1) { state = onOff; }
             else if (A0 && !A1) { state = increment; }
             else if (!A0 && A1) { state = decrement; }
             else { state = wait_lc; }
             break;
 
         case increment:
-            if (A0 && A1) { state = reset; }
+            if (A0 && A1) { state = onOff; }
             else if (A0 && !A1) { state = buttonPress; }
             else if (!A0 && A1) { state = decrement; }
             else { state = wait_lc; }
             break;
 
         case decrement:
-            if (A0 && A1) { state = reset; }
+            if (A0 && A1) { state = onOff; }
             else if (!A0 && A1) { state = buttonPress; }
             else if (A0 && !A1) { state = increment; }
             else { state = wait_lc; }
             break;
 
-        case reset:
+        case onOff:
             if (A0 || A1) { state = buttonPress; }
             else { state = wait_lc; }
             break;
 
         case buttonPress:
             if (!A0 && !A1) { state = wait_lc; }
-            else if (A0 && A1) { state = reset; }
+            else if (A0 && A1) { state = onOff; }
             else { state = buttonPress; }
             break;
 
@@ -153,8 +153,10 @@ int lightControlTick(int state) {
             if (lightsOnDisplay > 0) { --lightsOnDisplay;}
             break;
 
-        case reset:
-            lightsOnDisplay = 0x00;
+        case onOff:
+            // If lights are on, turn them off
+            if (lightsOnDisplay > 0) { lightsOnDisplay = 0x00; }
+            else { lightsOnDisplay = 0x01; }
             break;
 
         case buttonPress: break;

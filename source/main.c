@@ -174,7 +174,42 @@ int lightControlTick(int state) {
 }
 
 int festiveLights1 (int state) {
+    // This festive light display has the following pattern:
+            /* 10000001
+               01000010
+               00100100
+               00011000
+               00100100
+               01000010
+               10000001
+            */
+    static unsigned char shifter;
 
+    switch (state) {
+        case wait_1:
+            if (lightsOnDisplay == 1) { state = lightShow_1; }
+            else { state = wait_1; }
+            break;
+
+        case lightShow_1:
+            if (lightsOnDisplay == 1) { state = lightShow_1; }
+            else { state = wait_1; }
+            break;
+    }
+
+    switch (state) {
+        case wait_1:
+            // Initial light s
+            shifter = 0;
+            break;
+
+        case lightShow_1:
+            shiftOutput = ((0x01 << shifter ) | (0x80 >> shifter));
+
+            if (shifter < 7) { ++shifter; }
+            else { shifter = 0;}
+            break;
+    }
 
     return state;
 }
